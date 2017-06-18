@@ -14,6 +14,9 @@ class ViewController: UIViewController, UIDropInteractionDelegate, UIDragInterac
         super.viewDidLoad()
         view.addInteraction(UIDropInteraction(delegate: self))
         view.addInteraction(UIDragInteraction(delegate: self))
+        view.backgroundColor = UIColor.white
+        navigationItem.title = "Collage Sharing"
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Share", style: .plain, target: self, action: #selector(self.handleShare))
     }
     
     func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem] {
@@ -63,6 +66,10 @@ class ViewController: UIViewController, UIDropInteractionDelegate, UIDragInterac
                 DispatchQueue.main.async {
                     let imageView = UIImageView(image: draggedImage)
                     imageView.isUserInteractionEnabled = true
+                    imageView.layer.borderWidth = 4.0
+                    imageView.layer.borderColor = UIColor.black.cgColor
+                    imageView.layer.shadowRadius = 5.0
+                    imageView.layer.shadowOpacity = 0.3
                     self.view.addSubview(imageView)
                     imageView.frame = CGRect(x: 0, y: 0, width: draggedImage.size.width, height: draggedImage.size.height)
                     let centerPoint = session.location(in: self.view)
@@ -70,6 +77,18 @@ class ViewController: UIViewController, UIDropInteractionDelegate, UIDragInterac
                 }
             })
         }
+    }
+    
+    @objc func handleShare() {
+        print("Sharing Image")
+        UIGraphicsBeginImageContext(view.frame.size)
+        view.layer.render(in: UIGraphicsGetCurrentContext()!)
+        guard let image = UIGraphicsGetImageFromCurrentImageContext() else { return }
+        UIGraphicsEndImageContext()
+        
+        let activityViewController = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        activityViewController.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
+        present(activityViewController, animated: true, completion: nil)
     }
     
 }
