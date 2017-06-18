@@ -8,11 +8,40 @@
 
 import UIKit
 
-class ViewController: UIViewController, UIDropInteractionDelegate {
-
+class ViewController: UIViewController, UIDropInteractionDelegate, UIDragInteractionDelegate {
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.addInteraction(UIDropInteraction(delegate: self))
+        view.addInteraction(UIDragInteraction(delegate: self))
+    }
+    
+    func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem] {
+        let touchedPoint = session.location(in: self.view)
+        if let touchedImageView = self.view.hitTest(touchedPoint, with: nil) as? UIImageView {
+            let touchedImage = touchedImageView.image
+            let itemProvider = NSItemProvider(object: touchedImage!)
+            let dragItem = UIDragItem(itemProvider: itemProvider)
+            dragItem.localObject = touchedImageView
+            return [dragItem]
+        }
+        return []
+    }
+    
+    func dragInteraction(_ interaction: UIDragInteraction, willAnimateLiftWith animator: UIDragAnimating, session: UIDragSession) {
+        session.items.forEach { (dragItem) in
+            if let touchedImageView = dragItem.localObject as? UIView {
+                touchedImageView.removeFromSuperview()
+            }
+        }
+    }
+    
+    func dragInteraction(_ interaction: UIDragInteraction, item: UIDragItem, willAnimateCancelWith animator: UIDragAnimating) {
+        self.view.addSubview(item.localObject as! UIView)
+    }
+    
+    func dragInteraction(_ interaction: UIDragInteraction, previewForLifting item: UIDragItem, session: UIDragSession) -> UITargetedDragPreview? {
+        return UITargetedDragPreview(view: item.localObject as! UIView)
     }
     
     func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool {
@@ -33,6 +62,7 @@ class ViewController: UIViewController, UIDropInteractionDelegate {
                 guard let draggedImage = obj as? UIImage else { return }
                 DispatchQueue.main.async {
                     let imageView = UIImageView(image: draggedImage)
+                    imageView.isUserInteractionEnabled = true
                     self.view.addSubview(imageView)
                     imageView.frame = CGRect(x: 0, y: 0, width: draggedImage.size.width, height: draggedImage.size.height)
                     let centerPoint = session.location(in: self.view)
